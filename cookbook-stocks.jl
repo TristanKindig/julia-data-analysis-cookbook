@@ -40,6 +40,14 @@ function month_map(str)
    end
 end
 
+function check_is_goog(str)
+    if (str == "goog")
+        "goog"
+    else
+        "not goog"
+    end
+end
+
 ## Load and clean data
 
 # load data
@@ -115,6 +123,19 @@ df = copy(stocks_df)
 df[:, :year] = Date.(year.(df.date))
 by(df, :year, aapl_price_mean = :aapl => mean ∘ skipmissing)
 
+## Get missing stocks for Google
+
+stocks_df[ismissing.(stocks_df.goog), :]
+
+## Get rows that are missing nothing
+
+dropmissing(stocks_df)
+stocks_df[completecases(stocks_df), :]
+
+## Get rows that are missing anything
+
+stocks_df[.!completecases(stocks_df), :]
+
 ## What if MSFT and IBM joined forces
 
 df = copy(stocks_df)
@@ -132,14 +153,6 @@ df[(20 .< df.msft) .& (30 .< df.aapl .< 40), [:date, :aapl, :msft]]
 
 ## Get average prices of Google vs not-Google by year
 
-function check_is_goog(str)
-    if (str == "goog")
-        "goog"
-    else
-        "not goog"
-    end
-end
-
 df = stack(stocks_df, Not(:date))
 df = rename(df, :variable => :company, :value => :price)
 df.company_str = string.(df.company)
@@ -148,6 +161,14 @@ df.year = Date.(year.(df.date))
 df = select(df, Not([:company, :company_str, :date]))
 df = by(df, [:is_goog, :year], price_mean = :price => mean ∘ skipmissing)
 df = sort(df, [:year, :is_goog])
+
+df |>
+@vlplot(
+    :line,
+    x = "year:t",
+    y = :price_mean,
+    color = :is_goog
+)
 
 ## Plot stocks over time where price is averaged yearly
 
@@ -169,7 +190,31 @@ df |>
     title = "Stock price over time, averaged yearly"
 )
 
+## Stacked area chart of prices averaged by year
 
+df = copy(stocks_df)
+df.year = Date.(year.(df.date))
+df = by(df,
+    :year,
+    aapl  = :aapl => mean,
+    msft  = :msft => mean,
+    goog  = :goog => mean ∘ skipmissing,
+    amzn  = :amzn => mean,
+    ibm  = :ibm => mean,
+)
+df = stack(df, Not(:year))
+df = rename(df, :variable => :company, :value => :price)
+df |> @vlplot(
+    :area,
+    x = {
+        :year,
+        axis = {format = "%Y"}
+    },
+    y = :price,
+    color = :company,
+    height = 500,
+    width = 500
+)
 
 ## Randomly practicing select regex
 

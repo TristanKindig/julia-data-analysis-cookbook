@@ -1,0 +1,12 @@
+variable,mean,min,median,max,nunique,nmissing,eltype
+carrier_code,nothing,9E,nothing,YV,16,nothing,String
+tail_num,nothing,D942DN,nothing,N9EAMQ,4043,2512,"Union{Missing, String}"
+flight_num,nothing,1,nothing,999,3844,nothing,String
+origin,nothing,EWR,nothing,LGA,3,nothing,String
+dest,nothing,ABQ,nothing,XNA,105,nothing,String
+sched_dep_time,nothing,2013-01-01T05:15:00.0,nothing,2013-12-31T23:59:00.0,127328,nothing,DateTime
+actual_dep_time,nothing,2013-01-01T05:17:00.0,nothing,2013-12-31T23:56:00.0,211719,8255,"Union{Missing, DateTime}"
+sched_arr_time,nothing,2013-01-01T07:06:00.0,nothing,2014-01-01T04:45:00.0,207827,nothing,DateTime
+actual_arr_time,nothing,2013-01-01T00:06:00.0,nothing,2014-01-02T00:00:00.0,220370,8713,"Union{Missing, DateTime}"
+air_time_mins,150.68646019807787,20,129.0,695,nothing,9430,"Union{Missing, Int64}"
+distance_crow_miles,1039.9126036297123,17,872.0,4983,nothing,nothing,Int64
