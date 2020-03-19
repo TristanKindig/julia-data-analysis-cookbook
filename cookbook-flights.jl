@@ -17,8 +17,8 @@ function create_full_sched_time(df, type)
 end
 
 function create_full_actual_time(df, type)
-  temp = Array{Union{Missing, DateTime}, 1}(undef, size(df, 1))
-  for i in 1:size(df, 1)
+  temp = Array{Union{Missing, DateTime}, 1}(undef, nrow(df))
+  for i in 1:nrow(df)
     if ismissing(df[i, type])
       temp[i] = missing
     else
@@ -59,7 +59,7 @@ flights_df = CSV.read(joinpath(project_path, "data", "flights.txt"), missingstri
 planes_df = CSV.read(joinpath(project_path, "data", "planes.csv"), missingstrings = ["NA", ""])
 weather_df = CSV.read(joinpath(project_path, "data", "weather.txt"), missingstrings = ["NA"], delim = '\t')
 
-rename!(flights_df) do x lowercase(string(x)) end
+rename!(lowercase ∘ string, flights_df)
 
 flights_df[:, :flight_num] = string.(flights_df[:, :flight])
 
@@ -95,6 +95,10 @@ rename!(planes_df, :tailnum => :tail_num)
 planes_df.year_new = parse_date_missing(planes_df.year)
 select!(planes_df, Not(:year))
 rename!(planes_df, :year_new => :year)
+
+## Remove duplicate rows
+
+flights_df[.!nonunique(flights_df), :]
 
 ## Get percentage missings
 
@@ -149,7 +153,7 @@ sort(df, (order(:origin), order(:n, rev = true)))
 ## Group flights by week and plot
 
 df = copy(flights_df)
-df.week = Date.(fill(2013, size(df, 1))) .+ Week.(df.sched_dep_time)
+df.week = Date.(fill(2013, nrow(df))) .+ Week.(df.sched_dep_time)
 df |> @vlplot(
   :line,
   x = :week,
@@ -161,7 +165,7 @@ df |> @vlplot(
 ## Group flights by month and stack by origin
 
 df = copy(flights_df)
-df.month = Date.(fill(2013, size(df, 1))) .+ Month.(df.sched_dep_time)
+df.month = Date.(fill(2013, nrow(df))) .+ Month.(df.sched_dep_time)
 df |> @vlplot(
   :area,
   x = :month,
@@ -174,7 +178,7 @@ df |> @vlplot(
 ## Stack bar chart of carrier by month
 
 df = copy(flights_df)
-df.month = Date.(fill(2013, size(df, 1))) .+ Month.(df.sched_dep_time)
+df.month = Date.(fill(2013, nrow(df))) .+ Month.(df.sched_dep_time)
 df |> @vlplot(
   :bar,
   x = :month,
@@ -205,3 +209,28 @@ sort(df[in.(df.tail_num, Ref(repeated_tail_nums)), :], :tail_num)
 ## What is the average flights/year for a plane
 
 size(flights_df, 1) / length(unique(flights_df.tail_num))
+
+## Get one mean by type
+
+by(planes_df, :type, mean_speed = :speed => mean ∘ skipmissing)
+
+## Get a mean and median by type
+
+by(planes_df,
+  :type,
+  mean_speed = :speed => mean ∘ skipmissing,
+  median_speed = :speed => median ∘ skipmissing)
+
+## Get means on all columns by type
+
+df = planes_df[:, [:type, :speed, :seats, :engines]]
+aggregate(df, :type, mean ∘ skipmissing)
+
+## Get means and medians on all columns by type
+
+df = planes_df[:, [:type, :speed, :seats, :engines]]
+aggregate(df, :type, [mean ∘ skipmissing, median ∘ skipmissing])
+
+## Apply a custom summary function to a column by type
+
+by(planes_df, :type, sum_of_squared_speeds = :speed => x -> sum(skipmissing(x).^2))
